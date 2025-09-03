@@ -3,45 +3,38 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Enviar/Compartir Contrato</title>
+  <title>Enviar / Compartir Contrato</title>
   <style>
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; margin: 24px; }
-    form { max-width: 600px; }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; margin: 24px; background:#f9f9f9; }
+    h1 { color:#333; }
+    form { max-width: 600px; margin-top:20px; background:#fff; padding:20px; border-radius:8px; box-shadow:0 2px 6px rgba(0,0,0,.1); }
     label { display:block; margin: 12px 0 6px; font-weight:600; }
-    input, select, button, textarea { width:100%; padding:10px; font-size:16px; }
-    button { margin-top:16px; cursor:pointer; }
-    .row { display:flex; gap:12px; }
-    .row > * { flex:1; }
-    .card { border:1px solid #ddd; border-radius:10px; padding:16px; margin-top:16px; }
-    .ok { color: #0a7a2f; }
-    .err { color: #b00020; }
-    small { color: #555; }
+    input, select, button { width:100%; padding:10px; font-size:16px; }
+    button { margin-top:16px; cursor:pointer; background:#0069d9; color:#fff; border:none; border-radius:6px; }
+    button:disabled { background:#999; }
+    pre { background:#222; color:#0f0; padding:12px; border-radius:6px; overflow-x:auto; }
+    .card { border:1px solid #ddd; border-radius:10px; padding:16px; margin-top:16px; background:#fff; }
+    .ok { color:#0a7a2f; font-weight:bold; }
+    .err { color:#b00020; font-weight:bold; }
   </style>
 </head>
 <body>
   <h1>Enviar / Compartir Contrato</h1>
-  <p>Ingresá el <b>link de Drive</b> (o el ID) y el <b>email del cliente</b>. Elegí si querés <i>compartir</i>, <i>enviar por email</i> o <i>ambas</i>.</p>
+  <p>Ingresá el <b>link de Drive</b> (o ID del archivo) y el <b>email del cliente</b>. Elegí si querés <i>compartir</i>, <i>enviar por mail</i> o <i>ambas</i>.</p>
 
   <form id="form">
     <label for="fileUrl">Link de Drive (o ID)</label>
     <input id="fileUrl" name="fileUrl" type="text" required placeholder="https://drive.google.com/file/d/XXXXX/view" />
 
-    <div class="row">
-      <div>
-        <label for="email">Email del cliente</label>
-        <input id="email" name="email" type="email" required placeholder="cliente@empresa.com" />
-      </div>
-      <div>
-        <label for="mode">Acción</label>
-        <select id="mode" name="mode">
-          <option value="share">Compartir en Drive</option>
-          <option value="send">Enviar por email (adjunto PDF)</option>
-          <option value="both" selected>Ambas</option>
-        </select>
-      </div>
-    </div>
+    <label for="email">Email del cliente</label>
+    <input id="email" name="email" type="email" required placeholder="cliente@empresa.com" />
 
-    <input type="hidden" id="token" name="token" value="cambiame-por-un-token-seguro-123" />
+    <label for="mode">Acción</label>
+    <select id="mode" name="mode">
+      <option value="share">Compartir en Drive</option>
+      <option value="send">Enviar por email (adjunto PDF)</option>
+      <option value="both" selected>Ambas</option>
+    </select>
 
     <button id="submitBtn" type="submit">Ejecutar</button>
   </form>
@@ -49,64 +42,59 @@
   <div id="result" class="card" style="display:none;"></div>
 
   <script>
-    const GAS_URL = "PEGÁ_ACÁ_TU_WEB_APP_URL"; // <-- cambia esto
-    const SHARED_SECRET = document.getElementById('token').value;
+    const GAS_URL = "https://script.google.com/a/macros/runmedia.co/s/AKfycbxHrA1NDNDaVUKAgIB_wLBr4SHhRzAwj-QjwAjgjIjogx_Iqu6UQvUpnHBM3UjCws4Q/exec";
 
-    const form = document.getElementById('form');
-    const result = document.getElementById('result');
-    const submitBtn = document.getElementById('submitBtn');
+    const form = document.getElementById("form");
+    const result = document.getElementById("result");
+    const submitBtn = document.getElementById("submitBtn");
 
-    form.addEventListener('submit', async (e) => {
+    form.addEventListener("submit", async (e) => {
       e.preventDefault();
-      result.style.display = 'none';
+      result.style.display = "none";
       submitBtn.disabled = true;
-      submitBtn.textContent = 'Procesando...';
+      submitBtn.textContent = "Procesando...";
 
       try {
-        const fileUrl = document.getElementById('fileUrl').value.trim();
-        const email   = document.getElementById('email').value.trim();
-        const mode    = document.getElementById('mode').value;
+        const fileUrl = document.getElementById("fileUrl").value.trim();
+        const email   = document.getElementById("email").value.trim();
+        const mode    = document.getElementById("mode").value;
 
-        // Para evitar CORS preflight, usamos x-www-form-urlencoded:
         const body = new URLSearchParams();
-        body.set('fileUrl', fileUrl);
-        body.set('email', email);
-        body.set('mode', mode);
-        body.set('token', SHARED_SECRET); // opcional si lo activaste
+        body.set("fileUrl", fileUrl);
+        body.set("email", email);
+        body.set("mode", mode);
 
         const resp = await fetch(GAS_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
           body
         });
 
-        // Apps Script responde 200 aunque haya error; parseamos igual:
         const data = await resp.json().catch(() => ({}));
 
-        result.style.display = 'block';
+        result.style.display = "block";
         if (data.ok) {
-          const acts = (data.actions || []).map(a => `${a.action}: ${a.status}`).join(' | ');
+          const acts = (data.actions || []).map(a => `${a.action}: ${a.status}`).join(" | ");
           result.innerHTML = `
-            <div class="ok"><b>Listo</b></div>
-            <div><b>fileId:</b> ${data.fileId || '-'}</div>
-            <div><b>Acciones:</b> ${acts || '-'}</div>
-            <small>Si “share” falla, puede ser falta de permiso para agregar editores.</small>
+            <div class="ok">✅ Operación realizada con éxito</div>
+            <div><b>File ID:</b> ${data.fileId || "-"}</div>
+            <div><b>Acciones:</b> ${acts || "-"}</div>
           `;
         } else {
           result.innerHTML = `
-            <div class="err"><b>Error</b></div>
-            <div>${(data && (data.error || JSON.stringify(data))) || 'Error desconocido'}</div>
+            <div class="err">❌ Error</div>
+            <div>${(data && (data.error || JSON.stringify(data))) || "Error desconocido"}</div>
           `;
         }
       } catch (err) {
-        result.style.display = 'block';
+        result.style.display = "block";
         result.innerHTML = `
-          <div class="err"><b>Error de red o CORS</b></div>
+          <div class="err">❌ Error de red o CORS</div>
           <div>${(err && err.message) || err}</div>
         `;
       } finally {
         submitBtn.disabled = false;
-        submitBtn.textContent = 'Ejecutar';
+        submitBtn.textContent = "Ejecutar";
       }
     });
   </script>
